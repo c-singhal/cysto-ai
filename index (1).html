@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cysto.ai, AI-Powered CIS Detection for White Light Cystoscopy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500&family=Figtree:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#0ECFBB;--teal-mid:#0AADA0;
+  --teal-glow:rgba(14,207,187,0.15);--teal-faint:rgba(14,207,187,0.06);
+  --teal-border:rgba(14,207,187,0.2);
+  --navy:#04090F;--navy-1:#060E18;--navy-2:#0A1628;--navy-3:#0F1F38;
+  --navy-border:rgba(255,255,255,0.07);
+  --white:#EEF2F7;--white-80:rgba(238,242,247,0.8);
+  --white-50:rgba(238,242,247,0.5);--white-25:rgba(238,242,247,0.25);
+  --white-10:rgba(238,242,247,0.1);--white-5:rgba(238,242,247,0.05);
+  --red:#FF3D5A;--amber:#F5A623;
+}
+html{scroll-behavior:smooth}
+body{background:var(--navy);color:var(--white);font-family:'Figtree',sans-serif;font-weight:300;line-height:1.7;overflow-x:hidden}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--navy)}
+::-webkit-scrollbar-thumb{background:var(--navy-3)}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:200;padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between;background:rgba(4,9,15,0.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--navy-border);transition:border-color 0.3s}
+.logo{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:500;color:var(--teal);text-decoration:none;letter-spacing:-0.03em}
+.logo span{color:var(--white-25)}
+.nav-links{display:flex;gap:36px;list-style:none}
+.nav-links a{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white-50);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;transition:color 0.2s}
+.nav-links a:hover{color:var(--teal)}
+.nav-btn{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:var(--navy);background:var(--teal);text-decoration:none;padding:9px 22px;letter-spacing:0.05em;transition:background 0.2s}
+.nav-btn:hover{background:#12E8D4}
+
+.hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;gap:0;overflow:hidden}
+.hero-left{display:flex;flex-direction:column;justify-content:center;padding:140px 64px 80px;position:relative;z-index:2}
+.hero-right{position:relative;overflow:hidden;background:var(--navy-1);border-left:1px solid var(--navy-border)}
+
+.live-badge{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:40px}
+.live-dot{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:livePulse 2s ease-in-out infinite}
+@keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 var(--teal-glow)}50%{opacity:0.6;box-shadow:0 0 0 4px transparent}}
+
+.hero-h1{font-family:'Instrument Serif',serif;font-size:clamp(44px,5.5vw,80px);line-height:1.06;font-weight:400;letter-spacing:-0.025em;margin-bottom:28px}
+.hero-h1 em{font-style:italic;color:var(--teal)}
+.hero-sub{font-size:16px;color:var(--white-50);line-height:1.8;max-width:460px;margin-bottom:48px}
+
+.hero-metrics{display:flex;gap:0;margin-bottom:48px;border:1px solid var(--navy-border)}
+.hero-metric{flex:1;padding:20px 24px;border-right:1px solid var(--navy-border)}
+.hero-metric:last-child{border-right:none}
+.hm-num{font-family:'Instrument Serif',serif;font-size:28px;color:var(--teal);line-height:1;margin-bottom:4px}
+.hm-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white-25);letter-spacing:0.1em;text-transform:uppercase}
+
+.hero-actions{display:flex;gap:12px}
+.btn-p{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:var(--navy);background:var(--teal);text-decoration:none;padding:14px 28px;letter-spacing:0.04em;transition:all 0.2s;display:inline-block}
+.btn-p:hover{background:#12E8D4}
+.btn-g{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white-50);text-decoration:none;padding:14px 28px;border:1px solid var(--navy-border);letter-spacing:0.04em;transition:all 0.2s;display:inline-block}
+.btn-g:hover{border-color:var(--teal-border);color:var(--white)}
+
+/* SCOPE DEMO */
+.scope-demo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.scope-outer{position:relative;width:320px;height:320px}
+.scope-view{width:320px;height:320px;border-radius:50%;overflow:hidden;position:relative;border:2px solid rgba(255,255,255,0.06);box-shadow:0 0 80px rgba(14,207,187,0.04)}
+.tissue-base{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 45% 55%,#1a0a0a 0%,#0d0404 40%,#070202 100%)}
+.tissue-layer{position:absolute;inset:0;opacity:0.7;background:radial-gradient(ellipse 30% 25% at 30% 40%,rgba(180,60,40,0.4) 0%,transparent 60%),radial-gradient(ellipse 40% 30% at 65% 60%,rgba(150,40,30,0.3) 0%,transparent 60%),radial-gradient(ellipse 20% 20% at 50% 30%,rgba(200,80,50,0.25) 0%,transparent 50%),radial-gradient(ellipse 25% 20% at 75% 40%,rgba(160,50,35,0.3) 0%,transparent 50%)}
+.cis-region{position:absolute;width:90px;height:60px;border-radius:50%;background:radial-gradient(ellipse,rgba(180,100,80,0.5) 0%,rgba(160,70,55,0.3) 50%,transparent 70%);left:35%;top:38%;transform:translate(-50%,-50%)}
+.ai-overlay{position:absolute;inset:0;pointer-events:none}
+.detection-ring{position:absolute;width:110px;height:76px;border-radius:50%;border:2px solid var(--teal);left:35%;top:38%;transform:translate(-50%,-50%);animation:detectionPulse 3s ease-in-out infinite;opacity:0;animation-delay:2s}
+.detection-fill{position:absolute;width:110px;height:76px;border-radius:50%;background:rgba(14,207,187,0.12);left:35%;top:38%;transform:translate(-50%,-50%);animation:fillPulse 3s ease-in-out infinite;opacity:0;animation-delay:2s}
+.detection-label{position:absolute;left:calc(35% + 40px);top:calc(38% - 30px);transform:translate(-50%,-50%);font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--teal);letter-spacing:0.1em;white-space:nowrap;opacity:0;animation:labelFade 3s ease-in-out infinite;animation-delay:2.5s;background:rgba(4,9,15,0.8);padding:3px 6px}
+@keyframes detectionPulse{0%,100%{opacity:0;transform:translate(-50%,-50%) scale(0.9)}20%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes fillPulse{0%,100%{opacity:0}20%{opacity:1}80%{opacity:1}}
+@keyframes labelFade{0%,100%{opacity:0}20%{opacity:1}80%{opacity:1}}
+.conf-score{position:absolute;bottom:20px;left:20px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--teal);letter-spacing:0.08em;opacity:0;animation:scoreFade 3s ease-in-out infinite;animation-delay:2.8s}
+@keyframes scoreFade{0%,100%{opacity:0}20%{opacity:0.8}80%{opacity:0.8}}
+.crosshair{position:absolute;inset:0;pointer-events:none;opacity:0.12}
+.ch-h{position:absolute;top:50%;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent)}
+.ch-v{position:absolute;left:50%;top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,rgba(255,255,255,0.4),transparent)}
+.scope-mask{position:absolute;inset:-1px;background:radial-gradient(circle at center,transparent 49%,var(--navy-1) 50%);pointer-events:none}
+.scope-ring{position:absolute;inset:-8px;border-radius:50%;border:8px solid var(--navy-2);pointer-events:none}
+.scope-ring-inner{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,0.06);pointer-events:none}
+.scan-sweep{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(14,207,187,0.5),transparent);animation:scanSweep 4s linear infinite;opacity:0.35}
+@keyframes scanSweep{0%{top:0;opacity:0}10%{opacity:0.35}90%{opacity:0.35}100%{top:100%;opacity:0}}
+
+/* Rendering disclaimer */
+.rendering-note{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--white-25);letter-spacing:0.08em}
+
+.scope-sidebar{position:absolute;right:0;top:0;bottom:0;width:180px;display:flex;flex-direction:column;gap:1px;padding:20px 0 20px 12px;justify-content:center}
+.sidebar-module{background:rgba(6,14,24,0.9);border:1px solid var(--navy-border);padding:10px 12px}
+.sm-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--white-25);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:5px}
+.sm-value{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--teal);font-weight:500}
+.sm-bar{height:3px;background:var(--navy-3);margin-top:7px;position:relative;overflow:hidden}
+.sm-bar-fill{height:100%;background:var(--teal);animation:barFill 3s ease-in-out infinite;animation-delay:2s}
+@keyframes barFill{0%,5%{width:0}50%,95%{width:87%}100%{width:87%}}
+.sm-value-static{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white-50)}
+
+.scope-bottom{position:absolute;bottom:16px;left:0;right:180px;display:flex;gap:6px;padding:0 16px;align-items:center}
+.sb-chip{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;border:1px solid var(--navy-border);color:var(--white-25);letter-spacing:0.08em}
+.sb-chip.active{border-color:var(--teal-border);color:var(--teal);background:var(--teal-faint)}
+
+.map-preview{position:absolute;top:16px;left:16px;width:130px;height:130px;background:rgba(6,14,24,0.95);border:1px solid var(--navy-border);padding:10px}
+.mp-label{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--white-25);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px}
+.mp-map{position:relative;width:100%;height:95px}
+
+/* REG STRIP */
+.reg-strip{background:var(--navy-1);border-top:1px solid var(--navy-border);border-bottom:1px solid var(--navy-border);padding:28px 64px;display:flex;align-items:center;gap:0;overflow-x:auto}
+.rs-item{flex-shrink:0;padding:0 40px;border-right:1px solid var(--navy-border)}
+.rs-item:first-child{padding-left:0}
+.rs-item:last-child{border-right:none}
+.rs-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:4px}
+.rs-val{font-family:'Instrument Serif',serif;font-size:16px;color:var(--white)}
+
+/* SECTIONS */
+section{padding:120px 64px;position:relative;z-index:1}
+.sec-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.sec-eyebrow::before{content:'';width:28px;height:1px;background:var(--teal)}
+.sec-h2{font-family:'Instrument Serif',serif;font-size:clamp(32px,4vw,56px);font-weight:400;line-height:1.08;letter-spacing:-0.02em;margin-bottom:24px}
+.sec-h2 em{font-style:italic;color:var(--teal)}
+.sec-body{font-size:17px;color:var(--white-50);line-height:1.8;max-width:580px}
+
+/* PROBLEM */
+.problem{background:var(--navy-1);border-top:1px solid var(--navy-border);border-bottom:1px solid var(--navy-border)}
+.prob-layout{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:64px;align-items:start}
+.prob-text p{font-size:16px;color:var(--white-50);line-height:1.85;margin-bottom:20px}
+.prob-text strong{color:var(--white-80);font-weight:500}
+.prob-cards{display:flex;flex-direction:column;gap:2px}
+.pc{background:var(--navy-2);border:1px solid var(--navy-border);padding:22px 26px;transition:border-color 0.2s,background 0.2s}
+.pc:hover{border-color:var(--teal-border);background:var(--navy-3)}
+.pc-num{font-family:'Instrument Serif',serif;font-size:38px;color:var(--red);line-height:1;margin-bottom:5px}
+.pc-text{font-size:13px;color:var(--white-50);line-height:1.5}
+
+/* HOW IT WORKS */
+.how-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;background:var(--navy-border)}
+.hw-card{background:var(--navy);padding:40px 32px;transition:background 0.2s}
+.hw-card:hover{background:var(--navy-1)}
+.hw-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:0.1em;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.hw-num::before{content:'';width:5px;height:5px;background:var(--teal);border-radius:50%}
+.hw-title{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;margin-bottom:12px;line-height:1.2}
+.hw-body{font-size:14px;color:var(--white-25);line-height:1.7}
+
+/* MAP SECTION */
+.map-section{background:var(--navy-1);border-top:1px solid var(--navy-border);border-bottom:1px solid var(--navy-border)}
+.map-layout{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:64px;align-items:center}
+
+/* SETUP */
+.setup-visual{margin-top:64px;background:var(--navy-2);border:1px solid var(--navy-border);padding:48px;position:relative;overflow:hidden}
+.setup-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;align-items:center}
+.setup-component{padding:24px 20px;text-align:center;position:relative}
+.setup-component::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--white-25);font-size:14px;z-index:1}
+.setup-component:last-child::after{display:none}
+.sc-icon{width:56px;height:56px;margin:0 auto 12px;border:1px solid var(--navy-border);display:flex;align-items:center;justify-content:center;background:var(--navy)}
+.sc-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white-25);letter-spacing:0.08em;text-transform:uppercase;line-height:1.4}
+
+/* WORLD MAP SITES */
+.sites-section{background:var(--navy-1);border-top:1px solid var(--navy-border);border-bottom:1px solid var(--navy-border)}
+.world-map-container{margin-top:64px;position:relative;background:var(--navy-2);border:1px solid var(--navy-border);padding:32px}
+.map-legend{display:flex;gap:32px;margin-top:24px;padding-top:20px;border-top:1px solid var(--navy-border)}
+.legend-item{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white-50);letter-spacing:0.08em}
+.legend-dot-active{width:8px;height:8px;background:var(--teal);border-radius:50%;box-shadow:0 0 6px var(--teal)}
+.legend-dot-progress{width:8px;height:8px;background:var(--amber);border-radius:50%;opacity:0.7}
+
+/* Site dot tooltip */
+.site-dot-wrap{position:absolute;cursor:pointer}
+.site-pin{width:10px;height:10px;border-radius:50%;border:2px solid var(--teal);background:rgba(14,207,187,0.3);animation:sitePulse 2.5s ease-in-out infinite}
+.site-pin.progress{border-color:var(--amber);background:rgba(245,166,35,0.25);animation:sitePulseAmber 2.5s ease-in-out infinite}
+@keyframes sitePulse{0%,100%{box-shadow:0 0 0 0 rgba(14,207,187,0.4)}50%{box-shadow:0 0 0 6px rgba(14,207,187,0)}}
+@keyframes sitePulseAmber{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,0.3)}50%{box-shadow:0 0 0 5px rgba(245,166,35,0)}}
+.site-tooltip{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy-3);border:1px solid var(--navy-border);padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--white-50);white-space:nowrap;opacity:0;transition:opacity 0.2s;pointer-events:none;letter-spacing:0.08em}
+.site-dot-wrap:hover .site-tooltip{opacity:1}
+
+/* PRESS */
+.press-section{padding:80px 64px}
+.press-card{display:flex;gap:32px;align-items:flex-start;background:var(--navy-2);border:1px solid var(--navy-border);padding:36px;max-width:800px;transition:border-color 0.2s;text-decoration:none}
+.press-card:hover{border-color:var(--teal-border)}
+.press-pub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:10px}
+.press-headline{font-family:'Instrument Serif',serif;font-size:22px;color:var(--white);font-weight:400;line-height:1.3;margin-bottom:10px}
+.press-excerpt{font-size:14px;color:var(--white-50);line-height:1.6;margin-bottom:16px}
+.press-link{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);letter-spacing:0.1em;display:flex;align-items:center;gap:6px}
+.press-logo{flex-shrink:0;width:80px;display:flex;align-items:center;justify-content:center;border:1px solid var(--navy-border);padding:12px;background:var(--navy)}
+
+/* CTA */
+.cta-sec{background:var(--navy-1);border-top:1px solid var(--navy-border);text-align:center}
+.cta-sec .sec-eyebrow{justify-content:center}
+.cta-sec .sec-eyebrow::before{display:none}
+.cta-h{font-family:'Instrument Serif',serif;font-size:clamp(40px,5vw,72px);font-weight:400;line-height:1.06;letter-spacing:-0.025em;max-width:640px;margin:0 auto 20px}
+.cta-h em{font-style:italic;color:var(--teal)}
+.cta-sub{font-size:16px;color:var(--white-50);max-width:440px;margin:0 auto 40px}
+.cta-btns{display:flex;gap:12px;justify-content:center}
+
+footer{padding:32px 64px;border-top:1px solid var(--navy-border);display:flex;align-items:center;justify-content:space-between}
+.ft-logo{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;color:var(--teal)}
+.ft-legal{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white-25);letter-spacing:0.04em}
+.ft-contact{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white-25)}
+.ft-contact a{color:var(--teal);text-decoration:none}
+
+.fade-in{opacity:0;transform:translateY(16px);transition:opacity 0.6s ease,transform 0.6s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* TEAM */
+.team-section{border-top:1px solid var(--navy-border);border-bottom:1px solid var(--navy-border)}
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:64px;background:var(--navy-border)}
+.team-card{background:var(--navy);padding:36px 32px;transition:background 0.2s}
+.team-card:hover{background:var(--navy-1)}
+.team-name{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;margin-bottom:4px;line-height:1.2}
+.team-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:16px}
+.team-bio{font-size:14px;color:var(--white-25);line-height:1.7}
+@media(max-width:1000px){.team-grid{grid-template-columns:1fr}}
+
+@media(max-width:1000px){
+  nav{padding:0 24px}
+  .nav-links{display:none}
+  .hero{grid-template-columns:1fr;min-height:auto}
+  .hero-left{padding:120px 24px 60px}
+  .hero-right{height:380px}
+  section{padding:80px 24px}
+  .prob-layout,.map-layout{grid-template-columns:1fr;gap:40px}
+  .how-grid{grid-template-columns:1fr}
+  .setup-grid{grid-template-columns:repeat(3,1fr)}
+  footer{flex-direction:column;gap:16px;text-align:center;padding:32px 24px}
+  .reg-strip{padding:24px}
+  .rs-item{padding:0 20px}
+  .press-section{padding:80px 24px}
+  .press-card{flex-direction:column;gap:20px}
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <a href="#" class="logo">cysto<span>.ai</span></a>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#technology">Technology</a></li>
+    <li><a href="#sites">Global Sites</a></li>
+    <li><a href="#team">Team</a></li>
+    <li><a href="#press">Press</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="mailto:charu@etta.io?subject=Partnership%20Inquiry%20%E2%80%94%20cysto.ai" class="nav-btn">Partner With Us</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-left">
+    <h1 class="hero-h1">The AI that sees<br>what white light<br><em>misses.</em></h1>
+    <p class="hero-sub">cysto.ai is a plug-and-play AI system for real-time detection of carcinoma in situ during white light cystoscopy. No hardware modification. No workflow disruption.</p>
+    <div class="hero-metrics">
+      <div class="hero-metric"><div class="hm-num">30%</div><div class="hm-label">CIS miss rate</div></div>
+      <div class="hero-metric"><div class="hm-num">600K</div><div class="hm-label">Annual US surveillance scopes</div></div>
+      <div class="hero-metric"><div class="hm-num">De Novo</div><div class="hm-label">FDA confirmed</div></div>
+    </div>
+    <div class="hero-actions">
+      <a href="mailto:charu@etta.io?subject=Site%20Partnership%20Inquiry%20%E2%80%94%20cysto.ai" class="btn-p">Request Site Partnership</a>
+      <a href="#technology" class="btn-g">See the Technology</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="scope-demo">
+      <div class="map-preview">
+        <div class="mp-label">Bladder Map</div>
+        <div class="mp-map">
+          <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="60" cy="50" rx="50" ry="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+            <path d="M60 8 Q85 12 95 35 Q105 55 90 72" fill="none" stroke="rgba(14,207,187,0.4)" stroke-width="2" stroke-linecap="round"><animate attributeName="stroke-dasharray" from="0 200" to="80 0" dur="4s" repeatCount="indefinite"/></path>
+            <path d="M60 8 Q35 12 25 35 Q15 55 30 72" fill="none" stroke="rgba(14,207,187,0.3)" stroke-width="2" stroke-linecap="round"><animate attributeName="stroke-dasharray" from="0 200" to="80 0" dur="4s" begin="1s" repeatCount="indefinite"/></path>
+            <path d="M30 72 Q45 90 60 92 Q75 90 90 72" fill="none" stroke="rgba(14,207,187,0.25)" stroke-width="2" stroke-linecap="round"><animate attributeName="stroke-dasharray" from="0 200" to="60 0" dur="4s" begin="2s" repeatCount="indefinite"/></path>
+            <circle cx="42" cy="44" r="4" fill="none" stroke="#0ECFBB" stroke-width="1.5"><animate attributeName="opacity" values="0;1;1;0" dur="3s" begin="2.5s" repeatCount="indefinite"/><animate attributeName="r" values="3;5;3" dur="1.5s" begin="2.5s" repeatCount="indefinite"/></circle>
+            <circle cx="42" cy="44" r="1.5" fill="#0ECFBB"><animate attributeName="opacity" values="0;1;1;0" dur="3s" begin="2.5s" repeatCount="indefinite"/></circle>
+            <circle cx="60" cy="35" r="3" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"><animateMotion dur="8s" repeatCount="indefinite" path="M0 0 Q20 -15 30 0 Q20 20 0 15 Q-25 20 -30 0 Q-20 -20 0 0"/></circle>
+          </svg>
+        </div>
+      </div>
+
+      <div class="scope-outer">
+        <div class="scope-ring"></div>
+        <div class="scope-view">
+          <div class="tissue-base"></div>
+          <div class="tissue-layer"></div>
+          <div class="cis-region"></div>
+          <div class="scan-sweep"></div>
+          <div class="crosshair"><div class="ch-h"></div><div class="ch-v"></div></div>
+          <div class="ai-overlay">
+            <div class="detection-fill"></div>
+            <div class="detection-ring"></div>
+            <div class="detection-label">CIS, 0.87</div>
+          </div>
+          <div class="conf-score">DETECTION ACTIVE · 30fps</div>
+          <div class="scope-mask"></div>
+        </div>
+        <div class="scope-ring-inner"></div>
+      </div>
+
+      <div class="scope-sidebar">
+        <div class="sidebar-module"><div class="sm-label">Confidence</div><div class="sm-value" id="conf-val">0.87</div><div class="sm-bar"><div class="sm-bar-fill"></div></div></div>
+        <div class="sidebar-module"><div class="sm-label">Frame</div><div class="sm-value" id="frame-counter">0847</div></div>
+        <div class="sidebar-module"><div class="sm-label">Coverage</div><div class="sm-value">71%</div></div>
+        <div class="sidebar-module"><div class="sm-label">Flags</div><div class="sm-value" style="color:var(--amber)">2</div></div>
+      </div>
+
+      <div class="scope-bottom">
+        <div class="sb-chip active">AI ON</div>
+        <div class="sb-chip active">REC</div>
+        <div class="sb-chip">1080p</div>
+      </div>
+
+      <div class="rendering-note">Artistic rendering, not actual patient data</div>
+    </div>
+  </div>
+</section>
+
+<!-- REG STRIP -->
+<div class="reg-strip">
+  <div class="rs-item"><div class="rs-label">Regulatory pathway</div><div class="rs-val">FDA De Novo</div></div>
+  <div class="rs-item"><div class="rs-label">Classification</div><div class="rs-val">CADe / CADx System</div></div>
+  <div class="rs-item"><div class="rs-label">Hardware</div><div class="rs-val">Plug-and-play. No modification required.</div></div>
+</div>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+  <div class="sec-eyebrow">The Clinical Problem</div>
+  <h2 class="sec-h2">CIS is the hardest<br>cancer to <em>catch.</em></h2>
+  <div class="prob-layout">
+    <div class="prob-text fade-in">
+      <p>Carcinoma in situ of the bladder is the most aggressive non-muscle-invasive bladder cancer. It is flat, non-papillary, and visually subtle, easily mistaken for benign inflammation or normal bladder tissue under standard white light cystoscopy.</p>
+      <p>White light is used in the vast majority of cystoscopies globally. Enhanced imaging modalities require significant infrastructure investment and are unavailable at most practices where bladder cancer surveillance occurs.</p>
+      <p><strong>Missed CIS has serious consequences.</strong> Left undetected, CIS advances to muscle-invasive disease in 40–83% of cases, requiring radical surgery. Bladder cancer has the highest lifetime treatment cost of any solid tumor in the United States, up to $200,000 per patient, driven by the relentless surveillance burden and high recurrence rates that follow a missed or delayed diagnosis.</p>
+    </div>
+    <div class="prob-cards fade-in">
+      <div class="pc"><div class="pc-num">30%</div><div class="pc-text">CIS miss rate under white light cystoscopy, even among expert urologists</div></div>
+      <div class="pc"><div class="pc-num" style="color:var(--teal)">$200K</div><div class="pc-text"><strong style="color:var(--white-80)">Highest lifetime treatment cost of any solid tumor.</strong> Bladder cancer's recurrence rate means patients require surveillance cystoscopies every 3–6 months for life.</div></div>
+      <div class="pc"><div class="pc-num">40–83%</div><div class="pc-text">Untreated CIS that progresses to muscle-invasive disease requiring more aggressive treatment</div></div>
+      <div class="pc"><div class="pc-num">50–70%</div><div class="pc-text">Bladder cancer recurrence rate within 5 years, highest recurrence of any solid tumor</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TECHNOLOGY -->
+<section id="technology">
+  <div class="sec-eyebrow">The Technology</div>
+  <h2 class="sec-h2">Spatial. Temporal.<br><em>Clinical.</em></h2>
+  <p class="sec-body">cysto.ai is an AI system designed to understand a cystoscopy procedure the way an experienced urologist does, as a continuous event with spatial memory, not a sequence of isolated frames.</p>
+  <div class="how-grid fade-in" style="margin-top:64px">
+    <div class="hw-card">
+      <div class="hw-num">Real-time detection</div>
+      <h3 class="hw-title">Detection Overlay</h3>
+      <p class="hw-body">A real-time heatmap highlights regions of interest associated with CIS during the live procedure. The overlay appears on a secondary monitor adjacent to the physician's primary display. No interruption to clinical workflow. Runs on an edge device in the procedure room at 30fps.</p>
+    </div>
+    <div class="hw-card">
+      <div class="hw-num">Spatial mapping</div>
+      <h3 class="hw-title">Bladder Procedure Map</h3>
+      <p class="hw-body">After each procedure, the system automatically generates a spatially reconstructed map from the cystoscopy video, showing scope coverage, AI detection locations, physician-flagged moments, and biopsy sites pinned to anatomical coordinates. Currently in active development as part of the clinical trial.</p>
+    </div>
+    <div class="hw-card">
+      <div class="hw-num">Roadmap</div>
+      <h3 class="hw-title">Longitudinal Tracking</h3>
+      <p class="hw-body">On our development roadmap: the system will compare bladder maps across surveillance visits to detect change over time, giving urologists an objective spatial record of how each region has evolved between procedures. That capability does not exist today. Building it is the goal.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BLADDER MAP -->
+<section class="map-section">
+  <div class="sec-eyebrow">Bladder Procedure Map</div>
+  <h2 class="sec-h2">Every procedure,<br><em>mapped.</em></h2>
+  <div class="map-layout">
+    <div class="fade-in">
+      <p class="sec-body" style="margin-bottom:32px">Generated automatically from procedure video. No additional steps required from the physician or coordinator. Currently under active development as part of our clinical trial program.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:14px;align-items:flex-start;padding:14px;border:1px solid var(--navy-border);background:var(--navy-2)">
+          <div style="width:7px;height:7px;background:var(--teal);border-radius:50%;flex-shrink:0;margin-top:7px"></div>
+          <div><div style="font-size:14px;font-weight:500;margin-bottom:3px">Scope coverage map</div><div style="font-size:13px;color:var(--white-25)">Which regions were visualized, for how long, and in what sequence. Identifies under-examined zones.</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;padding:14px;border:1px solid var(--navy-border);background:var(--navy-2)">
+          <div style="width:7px;height:7px;background:var(--teal);border-radius:50%;flex-shrink:0;margin-top:7px"></div>
+          <div><div style="font-size:14px;font-weight:500;margin-bottom:3px">AI detection events</div><div style="font-size:13px;color:var(--white-25)">Where the AI flagged regions of interest, pinned to anatomical location rather than just a frame timestamp.</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;padding:14px;border:1px solid var(--navy-border);background:var(--navy-2)">
+          <div style="width:7px;height:7px;background:var(--amber);border-radius:50%;flex-shrink:0;margin-top:7px"></div>
+          <div><div style="font-size:14px;font-weight:500;margin-bottom:3px">Biopsy site record</div><div style="font-size:13px;color:var(--white-25)">Anatomical position of each biopsy captured at the moment of procedure. Replaces free-text location notes with a reproducible spatial record.</div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Animated bladder map -->
+    <div class="fade-in" style="max-width:420px">
+      <svg viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+        <defs>
+          <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#0A1628"/><stop offset="100%" stop-color="#060E18"/></radialGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <rect width="400" height="400" fill="url(#bgGrad)"/>
+        <ellipse cx="200" cy="200" rx="160" ry="140" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <line x1="200" y1="60" x2="200" y2="340" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <line x1="40" y1="200" x2="360" y2="200" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <path d="M200 60 Q240 65 265 90 Q220 80 180 80 Q155 65 200 60" fill="rgba(14,207,187,0.15)" stroke="rgba(14,207,187,0.3)" stroke-width="0.5"><animate attributeName="opacity" values="0;1" dur="0.5s" begin="0.5s" fill="freeze"/></path>
+        <path d="M40 200 Q50 160 75 135 Q60 175 58 205 Q55 230 70 255 Q45 235 40 200" fill="rgba(14,207,187,0.12)" stroke="rgba(14,207,187,0.25)" stroke-width="0.5"><animate attributeName="opacity" values="0;1" dur="0.5s" begin="1s" fill="freeze"/></path>
+        <path d="M360 200 Q350 160 325 135 Q340 175 342 205 Q345 230 330 255 Q355 235 360 200" fill="rgba(14,207,187,0.12)" stroke="rgba(14,207,187,0.25)" stroke-width="0.5"><animate attributeName="opacity" values="0;1" dur="0.5s" begin="1.5s" fill="freeze"/></path>
+        <path d="M135 100 Q165 68 200 62 Q235 68 265 100 Q230 82 200 80 Q170 82 135 100" fill="rgba(14,207,187,0.1)" stroke="rgba(14,207,187,0.2)" stroke-width="0.5"><animate attributeName="opacity" values="0;1" dur="0.5s" begin="2s" fill="freeze"/></path>
+        <text x="200" y="85" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(14,207,187,0.7)" letter-spacing="0.05em">DOME</text>
+        <text x="68" y="203" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="rgba(14,207,187,0.5)" letter-spacing="0.05em" transform="rotate(-90,68,203)">L. LAT</text>
+        <text x="332" y="203" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="rgba(14,207,187,0.5)" letter-spacing="0.05em" transform="rotate(90,332,203)">R. LAT</text>
+        <text x="200" y="328" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="rgba(14,207,187,0.4)" letter-spacing="0.05em">POST</text>
+        <path d="M200 100 Q240 130 260 160 Q270 190 255 220 Q235 240 210 230 Q185 220 170 200 Q155 175 165 150 Q180 125 200 130" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3 3"><animate attributeName="stroke-dashoffset" from="0" to="-20" dur="1s" repeatCount="indefinite"/></path>
+        <circle cx="200" cy="130" r="4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"><animateMotion dur="12s" repeatCount="indefinite" path="M0 0 Q40 30 60 60 Q70 90 55 120 Q35 140 10 130 Q-15 120 -30 100 Q-45 75 -35 50 Q-20 25 0 30"/></circle>
+        <g filter="url(#glow)">
+          <circle cx="165" cy="165" r="6" fill="rgba(14,207,187,0.3)" stroke="#0ECFBB" stroke-width="1.5"><animate attributeName="opacity" values="0;0;1;1;0.6" dur="4s" begin="3s" repeatCount="indefinite"/></circle>
+          <circle cx="165" cy="165" r="2" fill="#0ECFBB"><animate attributeName="opacity" values="0;0;1;1;0.6" dur="4s" begin="3s" repeatCount="indefinite"/></circle>
+          <text x="175" y="160" font-family="JetBrains Mono, monospace" font-size="8" fill="#0ECFBB" letter-spacing="0.08em"><animate attributeName="opacity" values="0;0;1;1;0" dur="4s" begin="3s" repeatCount="indefinite"/>CIS 0.87</text>
+        </g>
+        <g>
+          <circle cx="175" cy="175" r="4" fill="rgba(245,166,35,0.3)" stroke="#F5A623" stroke-width="1"><animate attributeName="opacity" values="0;0;0;1;1" dur="5s" begin="4s" repeatCount="indefinite"/></circle>
+          <text x="185" y="180" font-family="JetBrains Mono, monospace" font-size="8" fill="#F5A623" letter-spacing="0.08em"><animate attributeName="opacity" values="0;0;0;1;1" dur="5s" begin="4s" repeatCount="indefinite"/>BX</text>
+        </g>
+        <rect x="20" y="360" width="360" height="32" fill="rgba(6,14,24,0.85)" rx="0"/>
+        <circle cx="40" cy="376" r="4" fill="rgba(14,207,187,0.3)" stroke="#0ECFBB" stroke-width="1"/>
+        <text x="52" y="380" font-family="JetBrains Mono, monospace" font-size="8" fill="rgba(14,207,187,0.7)">AI DETECTION</text>
+        <circle cx="145" cy="376" r="4" fill="rgba(245,166,35,0.3)" stroke="#F5A623" stroke-width="1"/>
+        <text x="157" y="380" font-family="JetBrains Mono, monospace" font-size="8" fill="rgba(245,166,35,0.7)">BIOPSY SITE</text>
+
+        <text x="200" y="412" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="rgba(238,242,247,0.2)" letter-spacing="0.06em">Artistic rendering, in development</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SETUP -->
+<section id="setup">
+  <div class="sec-eyebrow">Hardware Setup</div>
+  <h2 class="sec-h2">Plug in.<br><em>That's it.</em></h2>
+  <p class="sec-body">Compatible with all major cystoscopy towers, including Storz, Olympus, and Ambu. No modification to existing equipment. The device operates in a pass-through configuration — your existing display and workflow are completely unaffected. Installation takes approximately two hours with no equipment downtime.</p>
+  <div class="setup-visual fade-in" style="padding:0;overflow:hidden;background:var(--navy-2);border:1px solid var(--navy-border)">
+
+    <!-- Signal chain diagram -->
+    <div style="padding:48px 48px 0;display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;overflow-x:auto">
+
+      <!-- SCOPE -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0;min-width:100px">
+        <div style="width:72px;height:72px;background:var(--navy-3);border:1px solid var(--navy-border);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <svg width="68" height="68" viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Handle body -->
+            <rect x="6" y="24" width="22" height="20" rx="4" fill="rgba(30,50,70,0.9)" stroke="rgba(14,207,187,0.3)" stroke-width="0.8"/>
+            <!-- Handle grip lines -->
+            <line x1="10" y1="29" x2="10" y2="39" stroke="rgba(14,207,187,0.15)" stroke-width="1"/>
+            <line x1="13" y1="29" x2="13" y2="39" stroke="rgba(14,207,187,0.15)" stroke-width="1"/>
+            <line x1="16" y1="29" x2="16" y2="39" stroke="rgba(14,207,187,0.1)" stroke-width="1"/>
+            <!-- Working channel port on handle top -->
+            <circle cx="21" cy="22" r="2.5" fill="rgba(14,207,187,0.15)" stroke="rgba(14,207,187,0.4)" stroke-width="0.8"/>
+            <!-- Light guide port -->
+            <rect x="7" y="20" width="5" height="4" rx="1" fill="rgba(14,207,187,0.1)" stroke="rgba(14,207,187,0.3)" stroke-width="0.7"/>
+            <!-- Insertion tube — angled slightly -->
+            <path d="M28 32 Q38 31 48 30 Q56 29.5 61 29" stroke="rgba(14,207,187,0.6)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+            <!-- Tube sheath highlight -->
+            <path d="M28 31 Q38 30 48 29 Q56 28.5 61 28" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-linecap="round" fill="none"/>
+            <!-- Distal tip — rounded with lens -->
+            <ellipse cx="62" cy="29" rx="4" ry="4.5" fill="rgba(20,35,50,0.95)" stroke="rgba(14,207,187,0.5)" stroke-width="0.8"/>
+            <!-- Lens ring -->
+            <circle cx="62" cy="28.5" r="2" fill="none" stroke="rgba(14,207,187,0.7)" stroke-width="0.8"/>
+            <!-- Lens center -->
+            <circle cx="62" cy="28.5" r="0.8" fill="rgba(14,207,187,0.6)"/>
+            <!-- Light emit glow -->
+            <circle cx="62" cy="31.5" r="1" fill="rgba(200,220,255,0.3)"/>
+            <!-- Deflection angle control wheel on handle -->
+            <circle cx="17" cy="34" r="4" fill="rgba(14,207,187,0.08)" stroke="rgba(14,207,187,0.25)" stroke-width="0.8"/>
+            <line x1="17" y1="30" x2="17" y2="32" stroke="rgba(14,207,187,0.3)" stroke-width="0.8"/>
+            <line x1="17" y1="36" x2="17" y2="38" stroke="rgba(14,207,187,0.3)" stroke-width="0.8"/>
+          </svg>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white-25);letter-spacing:0.1em;text-transform:uppercase;text-align:center">Cystoscope</div>
+      </div>
+
+      <!-- CONNECTOR -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 8px;flex-shrink:0;margin-bottom:24px">
+        <div style="width:40px;height:1px;background:var(--navy-border)"></div>
+      </div>
+
+      <!-- VIDEO PROCESSOR -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0;min-width:110px">
+        <div style="width:100px;height:72px;background:var(--navy-3);border:1px solid var(--navy-border);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px">
+          <div style="width:60px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px"></div>
+          <div style="width:60px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px"></div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <div style="width:8px;height:8px;border-radius:50%;background:rgba(14,207,187,0.2);border:1px solid rgba(14,207,187,0.4)"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.06)"></div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:6px;color:rgba(14,207,187,0.4);letter-spacing:0.1em">VIDEO OUT</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white-25);letter-spacing:0.1em;text-transform:uppercase;text-align:center">Video<br>Processor</div>
+      </div>
+
+      <!-- CONNECTOR + label -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 8px;flex-shrink:0;margin-bottom:24px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--teal);letter-spacing:0.08em;opacity:0.6">HDMI</div>
+        <div style="width:40px;height:1px;background:rgba(14,207,187,0.25)"></div>
+      </div>
+
+      <!-- CYSTO.AI DEVICE — highlighted -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0;min-width:140px">
+        <div style="position:relative">
+          <!-- Glow ring -->
+          <div style="position:absolute;inset:-6px;border-radius:10px;border:1px solid rgba(14,207,187,0.2);animation:deviceGlow 3s ease-in-out infinite"></div>
+          <style>@keyframes deviceGlow{0%,100%{opacity:0.4;box-shadow:0 0 0 0 rgba(14,207,187,0)}50%{opacity:1;box-shadow:0 0 20px rgba(14,207,187,0.15)}}</style>
+          <!-- The device box — wide flat slab -->
+          <div style="width:130px;height:52px;background:linear-gradient(150deg,#0ECFBB,#0AADA0 50%,#088880);border-radius:5px;display:flex;align-items:center;padding:0 14px;gap:10px;position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(14,207,187,0.15)">
+            <!-- Subtle texture -->
+            <div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 29px,rgba(0,0,0,0.04) 30px);border-radius:5px;pointer-events:none"></div>
+            <!-- Screw corners -->
+            <div style="position:absolute;top:5px;left:5px;width:4px;height:4px;border-radius:50%;background:rgba(0,0,0,0.2)"></div>
+            <div style="position:absolute;top:5px;right:5px;width:4px;height:4px;border-radius:50%;background:rgba(0,0,0,0.2)"></div>
+            <div style="position:absolute;bottom:5px;left:5px;width:4px;height:4px;border-radius:50%;background:rgba(0,0,0,0.2)"></div>
+            <div style="position:absolute;bottom:5px;right:5px;width:4px;height:4px;border-radius:50%;background:rgba(0,0,0,0.2)"></div>
+            <!-- Power button -->
+            <div style="width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <div style="width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(14,207,187,0.9);border-top-color:transparent;position:relative">
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);width:1.5px;height:4px;background:rgba(14,207,187,0.9)"></div>
+              </div>
+            </div>
+            <!-- Logo -->
+            <div style="flex:1">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500;color:rgba(3,8,14,0.65);letter-spacing:-0.03em;line-height:1">cysto.ai</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:5px;color:rgba(3,8,14,0.4);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px">intelligent cystoscopy</div>
+            </div>
+            <!-- LED -->
+            <div style="width:7px;height:7px;border-radius:50%;background:#04E8D4;box-shadow:0 0 6px rgba(14,207,187,0.8);flex-shrink:0;animation:ledPulse 2s ease-in-out infinite"></div>
+          </div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;text-align:center">cysto.ai<br>Device</div>
+      </div>
+
+      <!-- CONNECTOR -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 8px;flex-shrink:0;margin-bottom:24px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--teal);letter-spacing:0.08em;opacity:0.6">HDMI</div>
+        <div style="width:40px;height:1px;background:rgba(14,207,187,0.25)"></div>
+      </div>
+
+      <!-- MONITOR -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0;min-width:110px">
+        <div style="width:100px;height:72px;background:var(--navy-3);border:1px solid var(--navy-border);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;position:relative;overflow:hidden">
+          <!-- Screen content: cystoscopy tissue + heatmap overlay -->
+          <div style="position:absolute;inset:6px;border-radius:2px;overflow:hidden;background:#0a0303">
+            <!-- Tissue base -->
+            <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 65% at 45% 55%,#2a0c08 0%,#140504 50%,#080202 100%)"></div>
+            <!-- Tissue texture blobs -->
+            <div style="position:absolute;top:25%;left:18%;width:35%;height:30%;border-radius:40% 60% 55% 45%;background:rgba(160,50,30,0.25)"></div>
+            <div style="position:absolute;top:40%;left:45%;width:28%;height:25%;border-radius:55% 45% 40% 60%;background:rgba(130,40,25,0.2)"></div>
+            <!-- Heatmap highlight — the AI detection area -->
+            <div style="position:absolute;top:22%;left:20%;width:36%;height:30%;border-radius:45% 55% 50% 50%;background:rgba(14,207,187,0.18)"></div>
+            <div style="position:absolute;top:22%;left:20%;width:36%;height:30%;border-radius:45% 55% 50% 50%;border:1px solid rgba(14,207,187,0.7);animation:detectionPulse 3s ease-in-out infinite"></div>
+            <!-- HUD overlay text -->
+            <div style="position:absolute;top:3px;right:4px;font-family:'JetBrains Mono',monospace;font-size:4px;color:rgba(14,207,187,0.8);letter-spacing:0.06em">AI ON</div>
+            <div style="position:absolute;bottom:3px;left:4px;font-family:'JetBrains Mono',monospace;font-size:4px;color:rgba(14,207,187,0.9);letter-spacing:0.06em">CIS 0.87</div>
+            <div style="position:absolute;bottom:3px;right:4px;font-family:'JetBrains Mono',monospace;font-size:4px;color:rgba(255,255,255,0.25);letter-spacing:0.04em">30fps</div>
+          </div>
+          <!-- Monitor stand hint at bottom -->
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white-25);letter-spacing:0.1em;text-transform:uppercase;text-align:center">Overlay<br>Monitor</div>
+      </div>
+
+    </div>
+
+    <!-- Bottom note -->
+    <div style="padding:20px 48px;display:flex;justify-content:flex-end;border-top:1px solid var(--navy-border);margin-top:32px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(238,242,247,0.2);letter-spacing:0.1em;font-style:italic">Artistic rendering of investigational device</div>
+    </div>
+  </div>
+</section>
+
+<!-- GLOBAL SITES -->
+<section class="sites-section" id="sites">
+  <div class="sec-eyebrow">Global Clinical Network</div>
+  <h2 class="sec-h2">Active across<br><em>four continents.</em></h2>
+  <p class="sec-body">cysto.ai has established a multi-site clinical network spanning the United States, Europe, the Middle East, and Asia-Pacific, building the only pathology-correlated, spatially-annotated cystoscopy dataset in the world.</p>
+
+  <div class="world-map-container fade-in" id="world-map-wrap">
+    <canvas id="worldMap" style="width:100%;height:auto;display:block;background:transparent"></canvas>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(238,242,247,0.2);letter-spacing:0.1em;text-align:center;margin-top:16px;text-transform:uppercase">North America &middot; Europe &middot; Middle East &middot; Asia-Pacific</p>
+  </div>
+
+  <script>
+  (function() {
+    // Site coordinates [lon, lat]
+    const sites = [
+      [-122.4, 37.8],   // Bay Area
+      [-118.2, 34.0],   // Los Angeles
+      [-111.9, 33.4],   // Arizona
+      [-95.4, 29.7],    // Texas
+      [-74.2, 40.7],    // New Jersey
+      [-9.1, 38.7],     // Portugal
+      [31.2, 30.1],     // Egypt
+      [121.0, 13.0],    // Philippines
+    ];
+
+    function drawMap() {
+      const wrap = document.getElementById('world-map-wrap');
+      const canvas = document.getElementById('worldMap');
+      const W = wrap.offsetWidth;
+      const H = Math.round(W * 0.52);
+      canvas.width = W;
+      canvas.height = H;
+      canvas.style.height = H + 'px';
+
+      const ctx = canvas.getContext('2d');
+
+      // Equirectangular projection
+      function project(lon, lat) {
+        const x = (lon + 180) / 360 * W;
+        const y = (90 - lat) / 180 * H;
+        return [x, y];
+      }
+
+      // Background
+      const bg = ctx.createRadialGradient(W/2, H*0.45, 0, W/2, H*0.45, W*0.65);
+      bg.addColorStop(0, '#0A1628');
+      bg.addColorStop(1, '#060E18');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Equator
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      const [ex1] = project(-180, 0); const [ex2] = project(180, 0);
+      const ey = project(0, 0)[1];
+      ctx.moveTo(ex1, ey); ctx.lineTo(ex2, ey);
+      ctx.stroke();
+
+      // Draw land from GeoJSON-compatible polygon arrays
+      // Using Natural Earth simplified coordinates
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      ctx.strokeStyle = 'rgba(14,207,187,0.08)';
+      ctx.lineWidth = 0.5;
+
+      function drawPolygon(coords) {
+        if (!coords || coords.length < 2) return;
+        ctx.beginPath();
+        const [sx, sy] = project(coords[0][0], coords[0][1]);
+        ctx.moveTo(sx, sy);
+        for (let i = 1; i < coords.length; i++) {
+          const [px, py] = project(coords[i][0], coords[i][1]);
+          ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Land polygons — simplified Natural Earth
+      const landPolygons = [
+        // North America
+        [[-168,72],[-140,72],[-120,70],[-100,72],[-80,70],[-70,63],[-58,50],[-52,45],[-66,42],[-80,40],[-76,35],[-82,28],[-90,22],[-105,20],[-115,22],[-120,32],[-125,38],[-130,50],[-140,58],[-152,60],[-162,64],[-168,72]],
+        // Greenland
+        [[-70,82],[-40,84],[-18,76],[-20,66],[-44,58],[-58,64],[-68,72],[-70,82]],
+        // Alaska
+        [[-168,66],[-160,60],[-148,58],[-140,58],[-140,62],[-152,60],[-162,64],[-168,66]],
+        // Central America
+        [[-90,22],[-80,10],[-76,8],[-78,8],[-84,10],[-90,15],[-90,22]],
+        // Cuba
+        [[-84,23],[-76,20],[-74,22],[-78,24],[-84,23]],
+        // South America
+        [[-80,10],[-70,12],[-60,6],[-52,4],[-40,-4],[-34,-8],[-36,-18],[-40,-22],[-42,-24],[-50,-30],[-52,-34],[-58,-38],[-62,-42],[-66,-46],[-68,-56],[-70,-52],[-76,-50],[-76,-40],[-72,-30],[-70,-18],[-76,-10],[-78,-4],[-80,0],[-80,10]],
+        // UK + Ireland
+        [[-8,50],[-2,50],[0,52],[-2,58],[-6,58],[-8,54],[-8,50]],
+        [[-10,52],[-6,52],[-6,54],[-10,54],[-10,52]],
+        // Iceland
+        [[-24,64],[-14,64],[-12,66],[-18,66],[-24,65],[-24,64]],
+        // Iberian Peninsula
+        [[-8,44],[-2,44],[4,42],[4,38],[-2,36],[-8,36],[-10,38],[-10,42],[-8,44]],
+        // France + BeNeLux
+        [[4,44],[8,44],[10,50],[6,52],[2,52],[0,48],[4,44]],
+        // Scandinavia
+        [[4,58],[10,58],[14,64],[18,70],[24,70],[28,62],[22,56],[14,56],[10,58],[4,58]],
+        [[28,70],[32,72],[32,68],[28,68],[28,70]],
+        // Italy
+        [[8,44],[14,44],[16,40],[16,38],[14,36],[12,38],[10,42],[8,44]],
+        // Sicily
+        [[12,38],[14,36],[16,36],[16,38],[12,38]],
+        // Germany + Austria + Switzerland
+        [[6,52],[14,54],[18,54],[18,50],[14,46],[10,46],[6,48],[6,52]],
+        // Poland + Czech + Slovakia + Balkans
+        [[14,54],[24,54],[26,50],[24,44],[20,40],[16,40],[14,42],[14,46],[18,50],[14,54]],
+        // Greece
+        [[20,42],[24,42],[26,38],[24,36],[20,36],[20,38],[20,42]],
+        // Turkey
+        [[26,42],[30,42],[36,38],[42,38],[44,40],[38,40],[32,42],[26,42]],
+        // European Russia
+        [[24,54],[30,60],[32,68],[40,70],[50,68],[60,68],[60,56],[54,52],[48,48],[44,44],[36,44],[32,48],[28,50],[24,54]],
+        // Siberia / Asian Russia
+        [[60,68],[80,72],[100,74],[120,72],[140,68],[140,60],[134,46],[130,42],[124,50],[110,52],[100,52],[90,52],[80,56],[70,58],[60,60],[60,68]],
+        // Kazakhstan/Central Asia
+        [[50,52],[60,50],[70,42],[66,36],[60,34],[52,36],[44,40],[48,44],[50,52]],
+        // Africa
+        [[-18,16],[-16,20],[-18,24],[-16,28],[-8,32],[-4,36],[4,36],[10,36],[14,36],[22,36],[32,30],[38,22],[42,10],[42,2],[40,-4],[36,-8],[34,-14],[32,-20],[28,-26],[24,-32],[18,-34],[14,-28],[10,-22],[4,-10],[0,-4],[0,4],[-4,4],[-12,6],[-16,12],[-18,16]],
+        // Madagascar
+        [[44,-12],[50,-14],[50,-24],[44,-26],[44,-20],[44,-12]],
+        // Arabian Peninsula
+        [[36,30],[42,22],[56,24],[58,20],[54,14],[44,12],[38,12],[38,16],[38,22],[36,30]],
+        // Iran/Iraq
+        [[42,38],[48,38],[56,36],[60,32],[58,26],[50,22],[44,22],[40,28],[44,36],[42,38]],
+        // Pakistan/Afghanistan
+        [[60,32],[66,36],[70,38],[70,34],[66,26],[62,22],[60,22],[58,26],[60,32]],
+        // India
+        [[66,24],[72,22],[80,28],[86,22],[80,14],[76,10],[78,8],[74,8],[68,22],[66,24]],
+        // Sri Lanka
+        [[80,10],[82,8],[82,6],[80,8],[80,10]],
+        // China
+        [[70,38],[78,36],[86,28],[90,24],[96,22],[102,22],[108,18],[112,22],[118,24],[122,30],[126,36],[130,42],[124,50],[110,52],[100,52],[90,52],[80,56],[70,42],[70,38]],
+        // Korean Peninsula
+        [[124,40],[130,38],[130,34],[126,34],[124,38],[124,40]],
+        // Taiwan
+        [[120,26],[122,24],[122,22],[120,22],[120,26]],
+        // Japan Honshu
+        [[130,34],[134,36],[138,36],[140,40],[140,36],[138,34],[134,32],[130,32],[130,34]],
+        // Japan Hokkaido
+        [[140,42],[144,44],[144,40],[140,42]],
+        // Kyushu
+        [[130,32],[132,32],[132,30],[130,30],[130,32]],
+        // Indochina
+        [[96,22],[100,22],[104,18],[104,12],[100,2],[98,4],[96,8],[98,14],[96,22]],
+        // Malay Peninsula
+        [[100,6],[104,2],[104,-2],[102,-4],[100,2],[100,6]],
+        // Sumatra
+        [[96,4],[104,2],[108,-4],[104,-6],[96,4]],
+        // Java
+        [[106,-6],[112,-8],[114,-8],[106,-8],[106,-6]],
+        // Borneo
+        [[108,2],[116,4],[118,4],[118,-2],[114,-4],[108,-4],[108,2]],
+        // Sulawesi (simplified)
+        [[120,2],[124,0],[122,-4],[120,-2],[120,2]],
+        // Philippines Luzon
+        [[118,18],[122,18],[124,16],[122,12],[118,14],[118,18]],
+        // Philippines Mindanao
+        [[122,10],[126,8],[126,6],[122,6],[122,10]],
+        // Philippines Visayas
+        [[122,12],[124,12],[124,10],[122,10],[122,12]],
+        // New Guinea
+        [[132,-2],[140,-4],[146,-6],[142,-8],[134,-8],[132,-4],[132,-2]],
+        // Australia
+        [[114,-22],[114,-34],[118,-36],[124,-34],[128,-34],[132,-32],[136,-36],[140,-38],[144,-38],[148,-38],[152,-30],[152,-22],[148,-16],[144,-14],[138,-12],[132,-12],[128,-14],[122,-18],[114,-22]],
+        // Cape York
+        [[144,-14],[148,-18],[152,-22],[148,-16],[144,-14]],
+        // Tasmania
+        [[144,-40],[148,-44],[148,-44],[144,-42],[144,-40]],
+        // New Zealand North
+        [[172,-36],[178,-38],[178,-42],[174,-42],[172,-38],[172,-36]],
+        // New Zealand South
+        [[168,-44],[172,-46],[172,-46],[166,-46],[168,-44]],
+      ];
+
+      landPolygons.forEach(drawPolygon);
+
+      // Draw site dots with glow
+      function drawSite(lon, lat, delay) {
+        const [x, y] = project(lon, lat);
+        const t = Date.now() / 1000 + delay;
+        const pulse = 0.5 + 0.5 * Math.sin(t * 1.8);
+        const r = 4 + pulse * 3;
+        const alpha = 0.6 + pulse * 0.4;
+
+        // Glow
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, r * 2.5);
+        grd.addColorStop(0, `rgba(14,207,187,${0.25 * alpha})`);
+        grd.addColorStop(1, 'rgba(14,207,187,0)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ring
+        ctx.strokeStyle = `rgba(14,207,187,${alpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Core
+        ctx.fillStyle = '#0ECFBB';
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      sites.forEach((s, i) => drawSite(s[0], s[1], i * 0.4));
+    }
+
+    let animFrame;
+    function animate() {
+      drawMap();
+      animFrame = requestAnimationFrame(animate);
+    }
+
+    // Start when visible
+    const mapEl = document.getElementById('world-map-wrap');
+    const mapObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        animate();
+        mapObserver.disconnect();
+      }
+    }, { threshold: 0.1 });
+    mapObserver.observe(mapEl);
+
+    window.addEventListener('resize', drawMap);
+  })();
+  </script>
+</section>
+
+<!-- PRESS -->
+<section class="press-section" id="press">
+  <div class="sec-eyebrow">Press</div>
+  <h2 class="sec-h2">In the <em>news.</em></h2>
+
+  <a href="https://www.auanexus.org/events/forum/showcase-presenters/seed-stage-showcase-presenters" target="_blank" rel="noopener" class="press-card fade-in" style="margin-bottom:2px">
+    <div class="press-logo">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--white-50);text-align:center;letter-spacing:0.06em;line-height:1.6">AUA<br>INNOVATION<br>NEXUS</div>
+    </div>
+    <div>
+      <div class="press-pub">AUA Innovation Nexus 2026</div>
+      <div class="press-headline">cysto.ai Selected as Seed Stage Showcase Presenter</div>
+      <div class="press-excerpt">Etta.io, DBA cysto.ai, has been selected to present at the 2026 AUA Innovation Nexus Forum Showcase in Washington DC, joining a curated cohort of seed-stage urology companies presenting to leading urologists, clinicians, and industry stakeholders.</div>
+      <div class="press-link">View on AUA Innovation Nexus <span style="font-size:12px">&#x2192;</span></div>
+    </div>
+  </a>
+
+  
+</section>
+
+<!-- TEAM -->
+<section class="team-section" id="team">
+  <div class="sec-eyebrow">Team</div>
+  <h2 class="sec-h2">Built by people<br>who <em>care.</em></h2>
+  <div class="team-grid fade-in">
+
+
+
+
+
+
+
+    <!-- PLACEHOLDER — add next team member here -->
+    <!--
+    <div class="team-card">
+      <div class="team-name">Dr. Nitin Yerram, MD</div>
+      <div class="team-title">Co-Founder &amp; CMO</div>
+      <div class="team-bio">Dr. Yerram is Director of Urologic Research and Co-Director of Urologic Oncology at Hackensack Meridian Health Network, and a prolific researcher and surgeon in urologic oncology. At the National Cancer Institute, he led development of an AI tool to grade prostate cancer pathology slides, working across clinical, data science, and research teams — a direct precursor to the AI diagnostic field cysto.ai operates in. He leads clinical trial strategy, FDA clearance pathways, reimbursement, and health system integration at Etta.io. In his spare time he is an avid student of space exploration and hopes to travel to space one day.</div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-name">Charu Singhal</div>
+      <div class="team-title">Co-Founder &amp; CEO</div>
+      <div class="team-bio">Charu holds a graduate degree in data science, with a capstone in ML-based breast cancer tumor classification that sparked her focus on AI diagnostics. Before cysto.ai, she built machine learning systems for the State of Illinois and City of Chicago spanning public health, foster care, and opioid tracking. She leads all AI development, clinical partnerships, and product strategy at Etta.io. Outside of work she plays harp, dances ballet, and teaches English in refugee communities.</div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-name">Dr. Reagan Anderson</div>
+      <div class="team-title">Advisor</div>
+      <div class="team-bio">Dr. Anderson is a Board Certified Dermatologist and Fellow of the American Society of Mohs Surgeons, specializing in general dermatology and Mohs Micrographic Surgery for skin cancer. He is one of approximately 40 Mohs surgeons in the US to hold the American Osteopathic Board of Dermatology Certificate of Added Qualification in Mohs Micrographic Surgery.</div>
+    </div>
+
+    <!-- PLACEHOLDER — add team members here as agreements are signed -->
+    <div class="team-card" style="display:none">
+      <div class="team-name">[Name]</div>
+      <div class="team-title">[Title]</div>
+      <div class="team-bio">[Bio]</div>
+    </div>
+    -->
+
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec" id="contact">
+  <div class="sec-eyebrow">Get Involved</div>
+  <h2 class="cta-h">Let's <em>build this</em><br>together.</h2>
+  <p class="cta-sub">We are actively enrolling investigational sites and building strategic partnerships. If you are a urologist, hospital administrator, or potential collaborator, we would like to speak with you.</p>
+  <p style="font-size:14px;color:var(--white-25);max-width:480px;margin:0 auto 32px;line-height:1.7">Participating sites receive the full hardware kit, installation support, and early access to each new capability as the platform develops. There is no cost to the site.</p>
+  <div class="cta-btns">
+    <a href="mailto:charu@etta.io?subject=Inquiry%20%E2%80%94%20cysto.ai" class="btn-p">Contact Us</a>
+    <a href="mailto:charu@etta.io?subject=Site%20Partnership%20Inquiry%20%E2%80%94%20cysto.ai" class="btn-g">Site Partnership</a>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-logo">cysto.ai</div>
+  <div class="ft-legal" style="display:flex;flex-direction:column;gap:4px;text-align:center"><span>© 2026 Etta.io, DBA cysto.ai · Investigational device · Not FDA cleared</span><span style="opacity:0.7">cysto.ai is intended to assist urologists in identifying regions of interest and does not replace clinical judgment or pathological confirmation</span></div>
+  <div class="ft-contact"><a href="mailto:charu@etta.io">charu@etta.io</a> · San Francisco, CA</div>
+</footer>
+
+<div style="background:var(--navy-1);border-top:1px solid var(--navy-border);padding:20px 64px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white-25);letter-spacing:0.06em">Etta.io also develops AI solutions for dermatology. <a href="mailto:charu@etta.io?subject=Dermatology%20Solutions%20Inquiry" style="color:var(--teal);text-decoration:none;margin-left:8px">Get in touch &#x2192;</a></div>
+</div>
+
+<script>
+let frame = 847;
+setInterval(() => {
+  frame++;
+  const el = document.getElementById('frame-counter');
+  if (el) el.textContent = String(frame).padStart(4,'0');
+}, 33);
+
+let confBase = 0.87;
+setInterval(() => {
+  const el = document.getElementById('conf-val');
+  if (el) {
+    const v = Math.max(0.6, Math.min(0.99, confBase + (Math.random()-0.5)*0.04)).toFixed(2);
+    el.textContent = v;
+    el.style.color = parseFloat(v) > 0.75 ? '#0ECFBB' : '#F5A623';
+  }
+}, 800);
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 80);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.fade-in, .pc, .hw-card').forEach(el => {
+  if (!el.classList.contains('fade-in')) el.classList.add('fade-in');
+  observer.observe(el);
+});
+
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').style.borderBottomColor =
+    window.scrollY > 60 ? 'rgba(14,207,187,0.1)' : 'rgba(255,255,255,0.07)';
+});
+</script>
+</body>
+</html>
